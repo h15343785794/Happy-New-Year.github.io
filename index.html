@@ -1,0 +1,634 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>2026 新春快乐 </title>
+    <!-- 外部依赖 -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/three@0.132.2/build/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.2/dist/gsap.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/wavesurfer.js@6.6.3/dist/wavesurfer.min.js"></script>
+    
+    <!-- Tailwind 高级配置 -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        festive: {
+                            red: '#E63946',
+                            gold: '#FFD700',
+                            blue: '#1D3557',
+                            purple: '#9C27B0',
+                            green: '#2E7D32'
+                        },
+                        neon: {
+                            red: 'rgba(230, 57, 70, 0.8)',
+                            gold: 'rgba(255, 215, 0, 0.9)',
+                            blue: 'rgba(29, 53, 87, 0.8)',
+                        }
+                    },
+                    fontFamily: {
+                        luxury: ['"Montserrat"', '"Noto Sans SC"', 'sans-serif'],
+                        festive: ['"Ma Shan Zheng"', '"ZCOOL KuaiLe"', 'cursive']
+                    },
+                    animation: {
+                        'float': 'float 3s ease-in-out infinite',
+                        'pulse-slow': 'pulse 4s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                        'typewriter': 'typewriter 3s steps(12) forwards',
+                        'blink': 'blink 1s infinite'
+                    },
+                    keyframes: {
+                        float: {
+                            '0%, 100%': { transform: 'translateY(0)' },
+                            '50%': { transform: 'translateY(-15px)' },
+                        },
+                        typewriter: {
+                            'to': { width: '100%' }
+                        },
+                        blink: {
+                            '0%, 100%': { opacity: 1 },
+                            '50%': { opacity: 0 }
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <!-- 自定义工具类 -->
+    <style type="text/tailwindcss">
+        @layer utilities {
+            .text-3d {
+                text-shadow: 0 1px 0 #ccc, 0 2px 0 #c9c9c9, 0 3px 0 #bbb, 0 4px 0 #b9b9b9, 
+                            0 5px 0 #aaa, 0 6px 1px rgba(0,0,0,.1), 0 0 5px rgba(0,0,0,.1), 
+                            0 1px 3px rgba(0,0,0,.3), 0 3px 5px rgba(0,0,0,.2), 
+                            0 5px 10px rgba(0,0,0,.25), 0 10px 10px rgba(0,0,0,.2), 
+                            0 20px 20px rgba(0,0,0,.15);
+            }
+            .backdrop-blur-xl {
+                backdrop-filter: blur(24px);
+            }
+            .mask-gradient {
+                mask-image: linear-gradient(to bottom, black 85%, transparent 100%);
+                -webkit-mask-image: linear-gradient(to bottom, black 85%, transparent 100%);
+            }
+            .particle-canvas {
+                position: fixed !important;
+                top: 0;
+                left: 0;
+                z-index: 0;
+            }
+        }
+    </style>
+    
+    <!-- 引入中文字体 -->
+    <link href="https://fonts.googleapis.com/css2?family=Ma+Shan+Zheng&family=Montserrat:wght@600;800&family=Noto+Sans+SC:wght@400;700&family=ZCOOL+KuaiLe&display=swap" rel="stylesheet">
+</head>
+
+<body class="min-h-screen overflow-hidden bg-gradient-to-br from-festive-blue via-festive-purple to-festive-red font-luxury text-white">
+    <!-- 3D粒子背景容器 -->
+    <canvas id="particle-canvas" class="particle-canvas"></canvas>
+    
+    <!-- 加载动画 -->
+    <div id="loader" class="fixed inset-0 flex items-center justify-center bg-festive-blue z-50 transition-opacity duration-1000">
+        <div class="text-center">
+            <div class="w-24 h-24 border-4 border-festive-gold border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+            <p class="text-xl font-festive text-festive-gold">加载新春祝福中...</p>
+        </div>
+    </div>
+    
+    <!-- 主内容容器 -->
+    <div id="main-content" class="relative z-10 opacity-0 transition-opacity duration-1500">
+        <!-- 顶部装饰 -->
+        <div class="absolute top-0 left-0 right-0 flex justify-center pt-4">
+            <div class="flex items-center space-x-2">
+                <div class="w-8 h-8 rounded-full bg-festive-gold animate-pulse-slow"></div>
+                <div class="h-1 w-16 bg-festive-gold/80"></div>
+                <div class="text-festive-gold font-festive text-xl">新春大吉</div>
+                <div class="h-1 w-16 bg-festive-gold/80"></div>
+                <div class="w-8 h-8 rounded-full bg-festive-gold animate-pulse-slow"></div>
+            </div>
+        </div>
+        
+        <!-- 3D年份 -->
+        <div class="pt-20 md:pt-28 flex justify-center">
+            <div class="text-[clamp(6rem,30vw,18rem)] font-montserrat font-extrabold text-festive-gold text-3d animate-float">
+                2026
+            </div>
+        </div>
+        
+        <!-- 打字机祝福 -->
+        <div class="flex justify-center mt-4">
+            <h1 class="text-[clamp(2rem,10vw,5rem)] font-festive text-center relative inline-block overflow-hidden">
+                <span class="relative after:content-[''] after:absolute after:top-0 after:right-0 after:w-1 after:h-full after:bg-festive-gold after:animate-blink">
+                    新春快乐
+                </span>
+            </h1>
+        </div>
+        
+        <!-- 音乐可视化 -->
+        <div class="mt-8 px-6">
+            <div id="waveform" class="h-16 md:h-20 rounded-xl bg-white/10 backdrop-blur-xl p-2"></div>
+        </div>
+        
+        <!-- 祝福卡片轮播 -->
+        <div class="mt-10 px-4 md:px-8">
+            <div class="relative overflow-hidden">
+                <div id="blessing-slider" class="flex transition-transform duration-500 ease-out space-x-4 snap-x snap-mandatory overflow-x-auto py-4 px-2 mask-gradient">
+                    <!-- 祝福卡片1 -->
+                    <div class="min-w-[85vw] md:min-w-[300px] snap-center bg-white/10 backdrop-blur-xl rounded-2xl p-6 border border-festive-gold/30 shadow-lg shadow-festive-gold/20">
+                        <div class="text-4xl font-festive text-festive-gold mb-3">吉祥如意</div>
+                        <p class="text-white/80 text-lg">愿你新的一年，所求皆如愿，所行皆坦途，万事顺意，平安喜乐。</p>
+                        <div class="mt-4 text-festive-gold"><i class="fa fa-dragon text-2xl"></i></div>
+                    </div>
+                    <!-- 祝福卡片2 -->
+                    <div class="min-w-[85vw] md:min-w-[300px] snap-center bg-white/10 backdrop-blur-xl rounded-2xl p-6 border border-festive-red/30 shadow-lg shadow-festive-red/20">
+                        <div class="text-4xl font-festive text-festive-red mb-3">财源广进</div>
+                        <p class="text-white/80 text-lg">金蛇献瑞，财运亨通，事业蒸蒸日上，财源滚滚而来，富贵吉祥。</p>
+                        <div class="mt-4 text-festive-red"><i class="fa fa-money text-2xl"></i></div>
+                    </div>
+                    <!-- 祝福卡片3 -->
+                    <div class="min-w-[85vw] md:min-w-[300px] snap-center bg-white/10 backdrop-blur-xl rounded-2xl p-6 border border-festive-blue/30 shadow-lg shadow-festive-blue/20">
+                        <div class="text-4xl font-festive text-festive-blue mb-3">阖家幸福</div>
+                        <p class="text-white/80 text-lg">家人安康，笑语常伴，团圆美满，幸福绵长，喜乐常存。</p>
+                        <div class="mt-4 text-festive-blue"><i class="fa fa-home text-2xl"></i></div>
+                    </div>
+                    <!-- 祝福卡片4 -->
+                    <div class="min-w-[85vw] md:min-w-[300px] snap-center bg-white/10 backdrop-blur-xl rounded-2xl p-6 border border-festive-green/30 shadow-lg shadow-festive-green/20">
+                        <div class="text-4xl font-festive text-festive-green mb-3">前程似锦</div>
+                        <p class="text-white/80 text-lg">新岁启封，梦想启航，事业有成，前程万里，未来可期。</p>
+                        <div class="mt-4 text-festive-green"><i class="fa fa-rocket text-2xl"></i></div>
+                    </div>
+                </div>
+                <!-- 轮播指示器 -->
+                <div class="flex justify-center mt-4 space-x-2">
+                    <button class="slider-dot w-3 h-3 rounded-full bg-festive-gold" data-index="0"></button>
+                    <button class="slider-dot w-3 h-3 rounded-full bg-white/30" data-index="1"></button>
+                    <button class="slider-dot w-3 h-3 rounded-full bg-white/30" data-index="2"></button>
+                    <button class="slider-dot w-3 h-3 rounded-full bg-white/30" data-index="3"></button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 互动按钮区 -->
+        <div class="mt-12 flex flex-col md:flex-row justify-center gap-4 px-4">
+            <button id="firework-btn" class="bg-festive-red hover:bg-festive-red/90 text-white font-bold py-4 px-8 rounded-full text-lg md:text-xl transition-all duration-300 transform hover:scale-105 hover:shadow-lg hover:shadow-festive-red/40 flex items-center justify-center">
+                <i class="fa fa-fireworks mr-2"></i> 触摸放烟花
+            </button>
+            <button id="blessing-btn" class="bg-festive-gold hover:bg-festive-gold/90 text-festive-blue font-bold py-4 px-8 rounded-full text-lg md:text-xl transition-all duration-300 transform hover:scale-105 hover:shadow-lg hover:shadow-festive-gold/40 flex items-center justify-center">
+                <i class="fa fa-gift mr-2"></i> 随机祝福
+            </button>
+        </div>
+        
+        <!-- 底部信息 -->
+        <div class="absolute bottom-6 left-0 right-0 text-center text-white/50 text-sm">
+            <p>2026 新春祝福 | 点击/触摸屏幕燃放烟花</p>
+        </div>
+    </div>
+    
+    <!-- 烟花容器 -->
+    <div id="firework-container" class="fixed inset-0 pointer-events-none z-20"></div>
+    
+    <!-- 音频元素 -->
+    <audio id="background-music" loop preload="auto">
+        <source src="https://cdn.jsdelivr.net/gh/freesoundslibrary/chinese-new-year-music@main/gongxi-gongxi-instrumental.mp3" type="audio/mpeg">
+        您的浏览器不支持音频播放
+    </audio>
+    <audio id="firework-sound" preload="auto">
+        <source src="https://cdn.jsdelivr.net/gh/freesoundslibrary/firework-sounds@main/firework-explosion-01.mp3" type="audio/mpeg">
+    </audio>
+    
+    <script>
+        // 全局变量
+        let scene, camera, renderer, particles, particleGeometry, particleMaterial;
+        let wavesurfer;
+        const loader = document.getElementById('loader');
+        const mainContent = document.getElementById('main-content');
+        
+        // 页面加载完成后初始化
+        window.addEventListener('load', async () => {
+            // 初始化3D粒子背景
+            await initParticles();
+            
+            // 初始化音乐可视化
+            initWaveSurfer();
+            
+            // 初始化动画效果
+            initAnimations();
+            
+            // 初始化交互事件
+            initInteractions();
+            
+            // 隐藏加载动画，显示主内容
+            setTimeout(() => {
+                gsap.to(loader, { opacity: 0, duration: 1, onComplete: () => loader.style.display = 'none' });
+                gsap.to(mainContent, { opacity: 1, duration: 1.5 });
+            }, 1500);
+            
+            // 尝试播放背景音乐（需用户交互触发）
+            document.addEventListener('click', playBackgroundMusic, { once: true });
+        });
+        
+        /**
+         * 3D粒子背景初始化（Three.js）
+         */
+        async function initParticles() {
+            // 创建场景
+            scene = new THREE.Scene();
+            scene.fog = new THREE.Fog(0x1D3557, 200, 800);
+            
+            // 创建相机
+            camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+            camera.position.z = 400;
+            
+            // 创建渲染器
+            renderer = new THREE.WebGLRenderer({ 
+                canvas: document.getElementById('particle-canvas'),
+                alpha: true,
+                antialias: true
+            });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setPixelRatio(window.devicePixelRatio);
+            
+            // 创建粒子几何体
+            const particleCount = window.innerWidth < 768 ? 1500 : 3000;
+            particleGeometry = new THREE.BufferGeometry();
+            const positions = new Float32Array(particleCount * 3);
+            const colors = new Float32Array(particleCount * 3);
+            const sizes = new Float32Array(particleCount);
+            
+            // 定义新春颜色 palette
+            const particleColors = [
+                [230/255, 57/255, 70/255],   // 红色
+                [255/255, 215/255, 0/255],   // 金色
+                [29/255, 53/255, 87/255],    // 蓝色
+                [156/255, 39/255, 176/255]   // 紫色
+            ];
+            
+            // 填充粒子数据
+            for (let i = 0; i < particleCount; i++) {
+                const i3 = i * 3;
+                
+                // 随机位置
+                positions[i3] = (Math.random() - 0.5) * 2000;
+                positions[i3 + 1] = (Math.random() - 0.5) * 2000;
+                positions[i3 + 2] = (Math.random() - 0.5) * 2000;
+                
+                // 随机颜色
+                const color = particleColors[Math.floor(Math.random() * particleColors.length)];
+                colors[i3] = color[0];
+                colors[i3 + 1] = color[1];
+                colors[i3 + 2] = color[2];
+                
+                // 随机大小
+                sizes[i] = Math.random() * 3 + 1;
+            }
+            
+            particleGeometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+            particleGeometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+            particleGeometry.setAttribute('size', new THREE.BufferAttribute(sizes, 1));
+            
+            // 创建粒子材质
+            particleMaterial = new THREE.ShaderMaterial({
+                uniforms: {
+                    size: { value: 2.0 },
+                    scale: { value: window.innerHeight * 0.01 }
+                },
+                vertexShader: `
+                    attribute float size;
+                    attribute vec3 color;
+                    varying vec3 vColor;
+                    uniform float scale;
+                    
+                    void main() {
+                        vColor = color;
+                        vec4 mvPosition = modelViewMatrix * vec4(position, 1.0);
+                        gl_PointSize = size * (scale / length(mvPosition.xyz));
+                        gl_Position = projectionMatrix * mvPosition;
+                    }
+                `,
+                fragmentShader: `
+                    varying vec3 vColor;
+                    
+                    void main() {
+                        float distanceToCenter = length(gl_PointCoord - vec2(0.5));
+                        if (distanceToCenter > 0.5) discard;
+                        gl_FragColor = vec4(vColor, 0.8);
+                    }
+                `,
+                transparent: true,
+                blending: THREE.AdditiveBlending,
+                depthWrite: false
+            });
+            
+            // 创建粒子系统
+            particles = new THREE.Points(particleGeometry, particleMaterial);
+            scene.add(particles);
+            
+            // 粒子动画循环
+            function animateParticles() {
+                requestAnimationFrame(animateParticles);
+                
+                // 粒子旋转
+                particles.rotation.x += 0.0005;
+                particles.rotation.y += 0.0008;
+                
+                // 粒子位置更新
+                const positions = particleGeometry.attributes.position;
+                for (let i = 0; i < positions.count; i++) {
+                    const i3 = i * 3;
+                    positions.setZ(i3, positions.getZ(i3) + Math.sin(i * 0.1 + Date.now() * 0.0001) * 0.1);
+                }
+                positions.needsUpdate = true;
+                
+                renderer.render(scene, camera);
+            }
+            
+            animateParticles();
+        }
+        
+        /**
+         * 音乐可视化初始化（WaveSurfer.js）
+         */
+        function initWaveSurfer() {
+            wavesurfer = WaveSurfer.create({
+                container: '#waveform',
+                waveColor: 'rgba(255, 215, 0, 0.5)',
+                progressColor: 'rgba(255, 215, 0, 0.9)',
+                cursorColor: 'rgba(255, 255, 255, 0.8)',
+                barWidth: 3,
+                barRadius: 3,
+                responsive: true,
+                height: 80,
+                normalize: true,
+                partialRender: true
+            });
+            
+            // 加载音频
+            wavesurfer.load('https://cdn.jsdelivr.net/gh/freesoundslibrary/chinese-new-year-music@main/gongxi-gongxi-instrumental.mp3');
+            
+            // 音频播放时开始可视化
+            const audio = document.getElementById('background-music');
+            audio.addEventListener('play', () => {
+                wavesurfer.play();
+            });
+            
+            audio.addEventListener('pause', () => {
+                wavesurfer.pause();
+            });
+        }
+        
+        /**
+         * 初始化动画效果
+         */
+        function initAnimations() {
+            // 打字机效果
+            const typewriterText = document.querySelector('h1 span');
+            const text = typewriterText.textContent;
+            typewriterText.textContent = '';
+            
+            // 逐字显示
+            let i = 0;
+            function typeWriter() {
+                if (i < text.length) {
+                    typewriterText.textContent += text.charAt(i);
+                    i++;
+                    setTimeout(typeWriter, 200);
+                }
+            }
+            
+            // 延迟启动打字机效果
+            setTimeout(typeWriter, 2000);
+            
+            // 祝福卡片轮播指示器
+            const dots = document.querySelectorAll('.slider-dot');
+            const slider = document.getElementById('blessing-slider');
+            
+            dots.forEach(dot => {
+                dot.addEventListener('click', () => {
+                    const index = parseInt(dot.dataset.index);
+                    const width = document.querySelector('.min-w-\\[85vw\\]').offsetWidth + 16; // 卡片宽度 + 间距
+                    
+                    slider.scrollTo({
+                        left: index * width,
+                        behavior: 'smooth'
+                    });
+                    
+                    // 更新指示器样式
+                    dots.forEach(d => d.classList.remove('bg-festive-gold'));
+                    dots.forEach(d => d.classList.add('bg-white/30'));
+                    dot.classList.remove('bg-white/30');
+                    dot.classList.add('bg-festive-gold');
+                });
+            });
+            
+            // 滚动时更新指示器
+            slider.addEventListener('scroll', () => {
+                const width = document.querySelector('.min-w-\\[85vw\\]').offsetWidth + 16;
+                const index = Math.round(slider.scrollLeft / width);
+                
+                dots.forEach(d => d.classList.remove('bg-festive-gold'));
+                dots.forEach(d => d.classList.add('bg-white/30'));
+                if (dots[index]) {
+                    dots[index].classList.remove('bg-white/30');
+                    dots[index].classList.add('bg-festive-gold');
+                }
+            });
+        }
+        
+        /**
+         * 初始化交互事件
+         */
+        function initInteractions() {
+            const fireworkContainer = document.getElementById('firework-container');
+            const fireworkBtn = document.getElementById('firework-btn');
+            const blessingBtn = document.getElementById('blessing-btn');
+            const slider = document.getElementById('blessing-slider');
+            
+            // 播放背景音乐
+            function playBackgroundMusic() {
+                const audio = document.getElementById('background-music');
+                audio.volume = 0.4;
+                audio.play().catch(err => {
+                    console.log('音频播放需要用户交互，点击页面任意位置即可');
+                });
+            }
+            
+            // 播放烟花音效
+            function playFireworkSound() {
+                const audio = document.getElementById('firework-sound');
+                audio.volume = 0.6;
+                audio.currentTime = 0;
+                audio.play().catch(err => console.log('烟花音效播放失败'));
+            }
+            
+            // 创建高级烟花效果
+            function createAdvancedFirework(x, y) {
+                // 烟花主体
+                const firework = document.createElement('div');
+                const size = Math.random() * 200 + 150;
+                const colors = ['#E63946', '#FFD700', '#1D3557', '#9C27B0', '#2E7D32'];
+                const mainColor = colors[Math.floor(Math.random() * colors.length)];
+                
+                // 随机烟花形状
+                const shapes = ['circle', 'square', 'star', 'heart'];
+                const shape = shapes[Math.floor(Math.random() * shapes.length)];
+                
+                // 设置烟花样式
+                firework.className = 'absolute transform -translate-x-1/2 -translate-y-1/2';
+                firework.style.left = `${x}px`;
+                firework.style.top = `${y}px`;
+                firework.style.width = `${size}px`;
+                firework.style.height = `${size}px`;
+                firework.style.opacity = '1';
+                
+                // 根据形状设置样式
+                switch(shape) {
+                    case 'circle':
+                        firework.style.borderRadius = '50%';
+                        firework.style.boxShadow = `0 0 30px ${mainColor}, 0 0 60px ${mainColor}, 0 0 90px ${mainColor}, 0 0 120px ${mainColor}`;
+                        break;
+                    case 'square':
+                        firework.style.borderRadius = '8px';
+                        firework.style.transform = 'translate(-50%, -50%) rotate(45deg)';
+                        firework.style.boxShadow = `0 0 30px ${mainColor}, 0 0 60px ${mainColor}, 0 0 90px ${mainColor}, 0 0 120px ${mainColor}`;
+                        break;
+                    case 'star':
+                        firework.innerHTML = '<i class="fa fa-star text-6xl"></i>';
+                        firework.style.color = mainColor;
+                        firework.style.animation = 'float 1s ease-in-out';
+                        break;
+                    case 'heart':
+                        firework.innerHTML = '<i class="fa fa-heart text-6xl"></i>';
+                        firework.style.color = mainColor;
+                        firework.style.animation = 'float 1s ease-in-out';
+                        break;
+                }
+                
+                fireworkContainer.appendChild(firework);
+                
+                // 烟花爆炸动画
+                gsap.to(firework, {
+                    scale: 2.5,
+                    opacity: 0,
+                    duration: 1.8,
+                    ease: 'power3.out',
+                    onComplete: () => firework.remove()
+                });
+                
+                // 创建子粒子
+                createFireworkParticles(x, y, mainColor);
+                
+                // 播放音效
+                playFireworkSound();
+            }
+            
+            // 创建烟花子粒子
+            function createFireworkParticles(x, y, color) {
+                const particleCount = 30;
+                
+                for (let i = 0; i < particleCount; i++) {
+                    const particle = document.createElement('div');
+                    const size = Math.random() * 10 + 5;
+                    const angle = Math.random() * Math.PI * 2;
+                    const distance = Math.random() * 100 + 50;
+                    const duration = Math.random() * 1.5 + 0.5;
+                    
+                    // 计算粒子位置
+                    const finalX = x + Math.cos(angle) * distance;
+                    const finalY = y + Math.sin(angle) * distance;
+                    
+                    // 设置粒子样式
+                    particle.className = 'absolute rounded-full bg-white';
+                    particle.style.left = `${x}px`;
+                    particle.style.top = `${y}px`;
+                    particle.style.width = `${size}px`;
+                    particle.style.height = `${size}px`;
+                    particle.style.backgroundColor = color;
+                    particle.style.opacity = '0.9';
+                    
+                    fireworkContainer.appendChild(particle);
+                    
+                    // 粒子动画
+                    gsap.to(particle, {
+                        x: finalX,
+                        y: finalY,
+                        opacity: 0,
+                        duration: duration,
+                        ease: 'power2.out',
+                        onComplete: () => particle.remove()
+                    });
+                }
+            }
+            
+            // 点击/触摸生成烟花
+            document.addEventListener('click', (e) => {
+                // 排除按钮区域（避免重复触发）
+                if (!e.target.closest('button')) {
+                    createAdvancedFirework(e.clientX, e.clientY);
+                }
+            });
+            
+            // 手机触摸生成烟花
+            document.addEventListener('touchstart', (e) => {
+                const touch = e.touches[0];
+                createAdvancedFirework(touch.clientX, touch.clientY);
+            }, { passive: true });
+            
+            // 烟花按钮点击
+            fireworkBtn.addEventListener('click', () => {
+                // 批量生成烟花
+                const count = window.innerWidth < 768 ? 10 : 15;
+                for (let i = 0; i < count; i++) {
+                    const x = Math.random() * window.innerWidth;
+                    const y = Math.random() * window.innerHeight * 0.7;
+                    setTimeout(() => createAdvancedFirework(x, y), i * 100);
+                }
+            });
+            
+            // 随机祝福按钮
+            blessingBtn.addEventListener('click', () => {
+                const randomIndex = Math.floor(Math.random() * 4);
+                const width = document.querySelector('.min-w-\\[85vw\\]').offsetWidth + 16;
+                
+                slider.scrollTo({
+                    left: randomIndex * width,
+                    behavior: 'smooth'
+                });
+                
+                // 更新指示器
+                const dots = document.querySelectorAll('.slider-dot');
+                dots.forEach(d => d.classList.remove('bg-festive-gold'));
+                dots.forEach(d => d.classList.add('bg-white/30'));
+                dots[randomIndex].classList.remove('bg-white/30');
+                dots[randomIndex].classList.add('bg-festive-gold');
+                
+                // 生成小型烟花效果
+                const x = window.innerWidth / 2;
+                const y = window.innerHeight * 0.6;
+                createAdvancedFirework(x, y);
+            });
+        }
+        
+        /**
+         * 窗口大小适配
+         */
+        window.addEventListener('resize', () => {
+            // 更新3D场景大小
+            if (camera && renderer) {
+                camera.aspect = window.innerWidth / window.innerHeight;
+                camera.updateProjectionMatrix();
+                renderer.setSize(window.innerWidth, window.innerHeight);
+            }
+            
+            // 更新音乐可视化
+            if (wavesurfer) {
+                wavesurfer.drawBuffer();
+            }
+        });
+    </script>
+</body>
+</html>
